@@ -1,6 +1,6 @@
 // See LICENSE for license details.
 
-package craft
+package dspblocks
 
 import chisel3.util.{Counter, log2Up}
 import chisel3._

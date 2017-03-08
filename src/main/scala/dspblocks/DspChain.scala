@@ -36,7 +36,7 @@ object BlockConnectSAMOnly extends BlockConnectionParameters(false, false, true)
 object BlockConnectPGLAOnly extends BlockConnectionParameters(true, true, false)
 
 case class DspChainParameters (
-  blocks: Seq[(Parameters => DspBlock, String, BlockConnectionParameters)],
+  blocks: Seq[(Parameters => DspStream, String, BlockConnectionParameters)],
   logicAnalyzerSamples: Int,
   logicAnalyzerUseCombinationalTrigger: Boolean,
   patternGeneratorSamples: Int,
@@ -86,7 +86,7 @@ trait WithChainHeaderWriter { this: DspChainModule =>
   def annotateHeader = {
     object Chain {
       val chain = nameMangle(id)
-      val blocks = modules.map(mod => {
+      val blocks = mblocks.map(mod => {
         Map(
           "addrs"     ->
             mod.addrmap.map({case (key, value) =>
@@ -415,13 +415,14 @@ abstract class DspChainModule(
 
   require(blocks.length > 0)
 
-  val lazyMods = blocks.map(b => {
+  val lazyMods = blocks.map(c => {
     val modParams = p.alterPartial({
-      case DspBlockId => b._2
+      case DspBlockId => c._2
     })
-    val mod = LazyModule(b._1(modParams))
+    val mod = LazyModule(c._1(modParams))
     mod
   })
+
   val oldSamConfig: SAMConfig = p(DefaultSAMKey)
   val lazySams = lazyMods.zip(blocksUseSAM).map({ case(mod, useSam) =>
     val samWidth = 64 // todo don't hardcode...
@@ -448,22 +449,27 @@ abstract class DspChainModule(
   })
   val flattenedLazySams = lazySams.flatten.toSeq
 
+  // grab just the blocks, which have SCRs, but the streams don't
+  val lazyBlocks: Seq[DspBlock] = lazyMods.map(m => if (m.isInstanceOf[DspBlock]) Some(m.asInstanceOf[DspBlock]) else None).flatten
+
+  // don't add control addrs for streams, just blocks
   val ctrlAddrs = new AddrMap(
-    lazyMods.map(_.addrMapEntry) ++
+    lazyBlocks.map( _.addrMapEntry) ++
     flattenedLazySams.map(_.addrMapEntry) ++
     Seq(
       AddrMapEntry(s"chain", MemSize(BigInt(1 << 8), MemAttr(AddrMapProt.RWX)))
     ),
   start=ctrlBaseAddr)
 
-  (lazyMods ++ flattenedLazySams).zip(ctrlAddrs.entries).foreach{ case (mod, addr) =>
+  (lazyBlocks ++ flattenedLazySams).zip(ctrlAddrs.entries).foreach{ case (mod, addr) =>
     mod.setBaseAddr(addr.region.start)
   }
 
   val scrfile = outer.scrbuilder.generate(ctrlAddrs.entries.last.region.start)
 
   val modules = lazyMods.map(mod => Module(mod.module))
-  modules.map(m => 
+  val mblocks: Seq[DspBlockModule] = modules.map(m => if(m.isInstanceOf[DspBlockModule]) Some(m.asInstanceOf[DspBlockModule]) else None).flatten
+  mblocks.map(m => 
     IPXactComponents._ipxactComponents += DspIPXact.makeDspBlockComponent(m.baseAddr, m.uuid)(m.p)
     )
   val mod_ios = modules.map(_.io)
@@ -540,7 +546,7 @@ abstract class DspChainModule(
     case _ =>
   }
 
-  val control_axis = (modules ++ flattenedSams).map(_.io.axi) :+ scrfile_tl2axi.io.nasti
+  val control_axis = (mblocks ++ flattenedSams).map(_.io.axi) :+ scrfile_tl2axi.io.nasti
 
   val ctrlOutPorts = control_axis.length
   val dataOutPorts = totalSAMBlocks

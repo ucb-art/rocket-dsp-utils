@@ -25,7 +25,7 @@ case class DspBlockParameters (
   outputWidth: Int
 )
 
-trait HasDspBlockParameters {
+trait HasDspStreamParameters {
   implicit val p: Parameters
   // def baseAddr: Int = p(BaseAddr(p(DspBlockId)))
   def dspBlockExternal = p(DspBlockKey(p(DspBlockId)))
@@ -44,7 +44,7 @@ trait GenParameters {
   def lanesOut: Int = lanesIn
 }
 
-trait HasGenParameters[T <: Data, V <: Data] extends HasDspBlockParameters {
+trait HasGenParameters[T <: Data, V <: Data] extends HasDspStreamParameters {
   def genExternal            = p(GenKey(p(DspBlockId)))
   def genIn(dummy: Int = 0)  = genExternal.genIn[T]
   def genOut(dummy: Int = 0) = genExternal.genOut[V]
@@ -55,7 +55,7 @@ trait HasGenParameters[T <: Data, V <: Data] extends HasDspBlockParameters {
   // todo some assertions that the width is correct
 }
 
-trait HasGenDspParameters[T <: Data, V <: Data] extends HasDspBlockParameters with HasGenParameters[T, V] {
+trait HasGenDspParameters[T <: Data, V <: Data] extends HasDspStreamParameters with HasGenParameters[T, V] {
   def portSize[U <: Data](lanes: Int, in: U): Int = {
     val unpadded = lanes * in.getWidth
     val topad = (8 - (unpadded % 8)) % 8
@@ -65,21 +65,27 @@ trait HasGenDspParameters[T <: Data, V <: Data] extends HasDspBlockParameters wi
   abstract override def outputWidth    = portSize(lanesOut, genOut())
 }
 
-trait DspBlockIO {
+trait DspStreamIO {
   def inputWidth: Int
   def outputWidth: Int
-  implicit val p: Parameters
-
   val in  = Input( ValidWithSync(UInt(inputWidth.W)))
   val out = Output(ValidWithSync(UInt(outputWidth.W)))
+}
+
+trait SCRFileIO {
+  implicit val p: Parameters
   val axi = Flipped(new NastiIO())
 }
 
-class BasicDspBlockIO()(implicit val p: Parameters) extends Bundle with HasDspBlockParameters with DspBlockIO {
-  override def cloneType: this.type = new BasicDspBlockIO()(p).asInstanceOf[this.type]
+trait DspBlockIO extends DspStreamIO with SCRFileIO
+
+class BasicDspStreamIO()(implicit val p: Parameters) extends Bundle with HasDspStreamParameters with DspStreamIO {
+  override def cloneType: this.type = new BasicDspStreamIO()(p).asInstanceOf[this.type]
 }
 
-// case class BaseAddr(id: String) extends Field[Int]
+class BasicDspBlockIO()(implicit override val p: Parameters) extends BasicDspStreamIO with SCRFileIO {
+  override def cloneType: this.type = new BasicDspBlockIO()(p).asInstanceOf[this.type]
+}
 
 trait HasBaseAddr {
   private var _baseAddr: BigInt = BigInt(0)
@@ -103,8 +109,12 @@ trait HasSCRBuilder {
   val scrbuilder = new SCRBuilder(scrName)
 }
 
-abstract class DspBlock()(implicit val p: Parameters) extends LazyModule
-    with HasDspBlockParameters with HasBaseAddr with HasAddrMapEntry with HasSCRBuilder {
+abstract class DspStream()(implicit val p: Parameters) extends LazyModule with HasDspStreamParameters {
+  override def module: DspStreamModule    
+}
+
+abstract class DspBlock()(implicit override val p: Parameters) extends DspStream with HasBaseAddr 
+    with HasAddrMapEntry with HasSCRBuilder {
   override def module: DspBlockModule
 
   def size = scrbuilder.controlNames.length + scrbuilder.statusNames.length
@@ -121,13 +131,11 @@ abstract class DspBlock()(implicit val p: Parameters) extends LazyModule
 
 }
 
-abstract class DspBlockModule(val outer: DspBlock, b: => Option[Bundle with DspBlockIO] = None)
-  (implicit val p: Parameters) extends LazyModuleImp(outer) with HasDspBlockParameters {
-  val io: Bundle with DspBlockIO = IO(b.getOrElse(new BasicDspBlockIO))
-
-  def addrmap = testchipip.SCRAddressMap(outer.scrbuilder.devName).get
-
-  val baseAddr = outer.baseAddr
+// TODO: don't duplicate pack/unpack 
+abstract class DspStreamModule(val outer: DspStream, b: => Option[Bundle with DspStreamIO] = None)
+  (implicit val p: Parameters) extends LazyModuleImp(outer) with HasDspStreamParameters {
+  val _io = IO(b.getOrElse(new BasicDspStreamIO))
+  val io: Bundle with DspStreamIO = _io.asInstanceOf[Bundle with DspStreamIO]
 
   def unpackInput[T <: Data](lanes: Int, genIn: T) = {
     val i = Wire(ValidWithSync(Vec(lanes, genIn.cloneType)))
@@ -144,6 +152,15 @@ abstract class DspBlockModule(val outer: DspBlock, b: => Option[Bundle with DspB
     io.out.bits  := o.bits.asUInt
     o
   }
+}
+
+abstract class DspBlockModule(override val outer: DspBlock, b: => Option[Bundle with DspStreamIO with SCRFileIO] = None)
+  (implicit override val p: Parameters) extends DspStreamModule(outer, b) {
+  override val io: Bundle with DspStreamIO with SCRFileIO = _io.asInstanceOf[Bundle with DspStreamIO with SCRFileIO]
+
+  def addrmap = testchipip.SCRAddressMap(outer.scrbuilder.devName).get
+
+  val baseAddr = outer.baseAddr
 
   lazy val scr: SCRFile = {
     println(s"Base address for $name is ${outer.baseAddr}")
@@ -161,10 +178,20 @@ abstract class DspBlockModule(val outer: DspBlock, b: => Option[Bundle with DspB
   status("uuid") := uuid.U
 }
 
-class GenDspBlockIO[T <: Data, V <: Data]()(implicit val p: Parameters)
-  extends Bundle with HasGenDspParameters[T, V] with DspBlockIO {
+class GenDspStreamIO[T <: Data, V <: Data]()(implicit val p: Parameters)
+  extends Bundle with HasGenDspParameters[T, V] with DspStreamIO {
+  override def cloneType = new GenDspStreamIO()(p).asInstanceOf[this.type]
+}
+
+class GenDspBlockIO[T <: Data, V <: Data]()(implicit override val p: Parameters)
+  extends GenDspStreamIO with SCRFileIO {
   override def cloneType = new GenDspBlockIO()(p).asInstanceOf[this.type]
 }
+
+abstract class GenDspStreamModule[T <: Data, V <: Data]
+  (outer: DspStream)(implicit p: Parameters) extends DspStreamModule(outer, Some(new GenDspStreamIO[T, V]))
+  with HasGenDspParameters[T, V]
+
 
 abstract class GenDspBlockModule[T <: Data, V <: Data]
   (outer: DspBlock)(implicit p: Parameters) extends DspBlockModule(outer, Some(new GenDspBlockIO[T, V]))
