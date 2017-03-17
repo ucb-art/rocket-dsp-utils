@@ -87,6 +87,7 @@ trait WithChainHeaderWriter { this: DspChainModule =>
   def annotateHeader = {
     object Chain {
       val chain = nameMangle(id)
+      val chain_scr = SCRAddressMap("chain").get
       val blocks = modules.map(mod => {
         Map(
           "addrs"     ->
@@ -418,8 +419,21 @@ abstract class DspChain()
       case (None, _) => None
     }).flatten.toSeq
 
-  def makeAddrMap(entries: Seq[AddrMapEntry], start: Long = 0L) =
-    new AddrMap(entries, start=start)
+  def makeAddrMap(entries: Seq[AddrMapEntry], start: Long = 0L) = {
+    val maxSize = entries.map(_.region.size).max
+    // round up to nearest power of 2
+    val newSize = 1L << util.log2Up(maxSize)
+    val newEntries = entries.map(e =>
+      AddrMapEntry(e.name, e.region match {
+        case s: MemSize =>
+          s.copy(size = newSize)
+        case r: MemRange =>
+          r.copy(size = newSize)
+        case _ => throw dsptools.DspException("Invalid type of region")
+      })
+    )
+    new AddrMap(newEntries, start=start)
+  }
   def getMemSize(entries: Seq[AddrMapEntry], start: Long = 0L) = {
     val addrMap = makeAddrMap(entries, start)
     MemSize(addrMap.size, addrMap.attr)
@@ -499,9 +513,11 @@ abstract class DspChainModule(
 
   // the scrfile for the chain is the last entry in the ctrl address map
   // construct it and connect it to a AXI <-> TL converter
-  val scrfile = outer.scrbuilder.generate(ctrlAddrs.entries.last.region.start)
+  val scrBaseAddr = ctrlAddrs.entries.last.region.start
+  val scrfile = outer.scrbuilder.generate(scrBaseAddr)
   val scrfile_tl2axi = Module(new TileLinkIONastiIOConverter())
   scrfile_tl2axi.io.tl <> scrfile.io.tl
+  IPXactComponents._ipxactComponents += DspIPXact.makeSCRComponent(scrBaseAddr, "chain", scrfile_tl2axi.name)(p)
 
   // instantiate modules
   val modules = lazyMods.map(mod => mod.module)
