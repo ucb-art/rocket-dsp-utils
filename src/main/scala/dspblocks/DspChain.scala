@@ -520,6 +520,8 @@ abstract class DspChainModule(
   val tlkey = p(TLKey(tlid))
   require(tlkey.dataBitsPerBeat == 64,
     s"SCR File in DspChain requires 64-bit data bits per beat, got ${tlkey.dataBitsPerBeat}")
+  require(tlkey.dataBeats > 1,
+    s"There's a problem with the TL converters if dataBeats is 1")
 
   def ctrlBaseAddr       = outer.ctrlBaseAddr()
   def dataBaseAddr       = outer.dataBaseAddr()
