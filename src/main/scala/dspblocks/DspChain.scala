@@ -87,7 +87,13 @@ trait WithChainHeaderWriter { this: DspChainModule =>
   def annotateHeader = {
     object Chain {
       val chain = nameMangle(id)
-      // val chain_scr = SCRAddressMap("chain").get
+      val chain_scr = SCRAddressMap(outer.scrName).get.map({case (key, value) =>
+        Map(
+          "addrname"  -> key,
+          "addr"      -> value,
+          "blockname" -> nameMangle(outer.scrName)
+        )
+      })
       val blocks = modules.map(mod => {
         Map(
           "addrs"     ->
