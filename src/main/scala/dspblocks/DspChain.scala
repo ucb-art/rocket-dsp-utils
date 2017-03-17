@@ -523,7 +523,7 @@ abstract class DspChainModule(
   val scrfile = outer.scrbuilder.generate(scrBaseAddr)
   val scrfile_tl2axi = Module(new TileLinkIONastiIOConverter())
   scrfile_tl2axi.io.tl <> scrfile.io.tl
-  IPXactComponents._ipxactComponents += DspIPXact.makeSCRComponent(scrBaseAddr, "chain", scrfile_tl2axi.name)(p)
+  IPXactComponents._ipxactComponents += DspIPXact.makeSCRComponent(scrBaseAddr, outer.scrName, scrfile_tl2axi.name)(p)
 
   // instantiate modules
   val modules = lazyMods.map(mod => mod.module)
