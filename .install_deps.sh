@@ -9,9 +9,9 @@ if [ ! -d $TRAVIS_BUILD_DIR/lib ]; then
     mkdir -p $TRAVIS_BUILD_DIR/lib
 fi
 
-orgs=(     ucb-bar ucb-bar                                   ucb-bar            ucb-bar        ucb-bar    ucb-art     ucb-bar    ucb-art          ucb-bar )
-repos=(    firrtl  chisel3                                   firrtl-interpreter chisel-testers dsptools   rocket-chip testchipip builtin-debugger barstools )
-branches=( master  3e6ef13ff5cda2e65efbbf5d306cc101582ad0e5  master             master         master     craftFork   master     master           new_gen )
+orgs=(     ucb-bar ucb-bar ucb-bar            ucb-bar        ucb-bar    ucb-art     ucb-bar    ucb-art          ucb-bar )
+repos=(    firrtl  chisel3 firrtl-interpreter chisel-testers dsptools   rocket-chip testchipip builtin-debugger barstools )
+branches=( master  master  master             master         master     craftFork   master     master           master )
 
 for idx in "${!repos[@]}"; do
     org=${orgs[$idx]}
