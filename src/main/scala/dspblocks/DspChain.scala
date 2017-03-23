@@ -240,7 +240,7 @@ trait HasPatternGeneratorModule extends HasDspChainParameters with HasDecoupledS
         )
 
     patternGenerator.io.memory.bits.writeData(0) :=
-      patternGeneratorWriteData.reduce({(x:UInt, y:UInt) => util.Cat(x,y) })
+      patternGeneratorWriteData.reverse.reduce({(x:UInt, y:UInt) => util.Cat(x,y) })
 
     decoupledHelper(
       patternGenerator.io.memory.valid,
