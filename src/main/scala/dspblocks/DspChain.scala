@@ -115,9 +115,12 @@ trait WithChainHeaderWriter { this: DspChainModule =>
         )})
       val sam = flattenedSams.map(s => {
         Map(
-          "samname"   -> nameMangle(s.id),
-          "ctrl_base" -> s.baseAddr,
-          "data_base" -> s.dataBaseAddr
+          "samname"    -> nameMangle(s.id),
+          "ctrl_base"  -> s.baseAddr,
+          "data_base"  -> s.dataBaseAddr,
+          "io_width"   -> s.ioWidth,
+          "mem_width"  -> s.memWidth,
+          "pow2_width" -> s.powerOf2Width
           )
       })
       val samWStartAddrOffset   = getSamOffset("samWStartAddr")
