@@ -118,9 +118,9 @@ trait WithChainHeaderWriter { this: DspChainModule =>
           "samname"    -> nameMangle(s.id),
           "ctrl_base"  -> s.baseAddr,
           "data_base"  -> s.dataBaseAddr,
-          "io_width"   -> s.ioWidth,
-          "mem_width"  -> s.memWidth,
-          "pow2_width" -> s.powerOf2Width
+          "io_width"   -> s.sam.ioWidth,
+          "mem_width"  -> s.sam.memWidth,
+          "pow2_width" -> s.sam.powerOfTwoWidth
           )
       })
       val samWStartAddrOffset   = getSamOffset("samWStartAddr")
