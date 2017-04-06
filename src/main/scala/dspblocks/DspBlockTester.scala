@@ -846,7 +846,7 @@ trait AXIRWTester[T <: Module] { this: DspTester[T] with HasDspPokeAs[T] =>
     poke(axi.ar.bits.user, 0)
     poke(axi.ar.bits.addr, addr)
     poke(axi.ar.bits.len, 0)
-    poke(axi.ar.bits.size, log2Up(axiDataBytes))
+    poke(axi.ar.bits.size, log2Ceil(axiDataBytes))
     poke(axi.ar.bits.lock, 0)
     poke(axi.ar.bits.cache, 0)
     poke(axi.ar.bits.prot, 0)

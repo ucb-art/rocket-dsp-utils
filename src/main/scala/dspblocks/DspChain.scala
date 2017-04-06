@@ -118,7 +118,7 @@ trait WithChainHeaderWriter { this: DspChainModule =>
         Map(
           "samname"    -> nameMangle(s.id),
           "ctrl_base" -> s"0x${s.baseAddr.toString(16)}",
-          "data_base" -> s"0x${s.dataBaseAddr.toString(16)}"
+          "data_base" -> s"0x${s.dataBaseAddr.toString(16)}",
           "io_width"   -> s.sam.ioWidth,
           "mem_width"  -> s.sam.memWidth,
           "pow2_width" -> s.sam.powerOfTwoWidth
