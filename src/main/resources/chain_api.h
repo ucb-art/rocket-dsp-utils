@@ -9,7 +9,7 @@
 
 #include "memcpy.h"
 {{#each blocks}}
-{{#each addrs}}#define {{blockname}}_{{this.addrname}}L {{addr}}
+{{#each addrs}}#define {{blockname}}_{{this.addrname}} {{addr}}L
 {{/each}}
 {{/each}}
 typedef struct sam_capture {

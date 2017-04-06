@@ -171,6 +171,7 @@ object chainParameters {
     new Config(
       (pname, site, here) => pname match {
         case DspChainIncludeJtag => true
+        case DspChainAPIDirectory => "./"
         case DspChainAXI4SInputWidth => 128
         case DefaultSAMKey => defaultSAMConfig
         case DspChainId => "chain"
