@@ -8,7 +8,7 @@ import chisel3._
 import chisel3.experimental._
 import chisel3.iotesters.PeekPokeTester
 import chisel3.internal.firrtl.KnownBinaryPoint
-import chisel3.util.log2Up
+import chisel3.util.log2Ceil
 import dsptools.{DspTester, DspException}
 import dsptools.numbers.{DspComplex, DspReal}
 import dsptools.DspTesterUtilities._
@@ -639,7 +639,7 @@ trait AXIRWTester[T <: Module] { this: DspTester[T] with HasDspPokeAs[T] =>
     poke(axi.aw.bits.user, 0)
     poke(axi.aw.bits.addr, addr)
     poke(axi.aw.bits.len, 0)
-    poke(axi.aw.bits.size, log2Up(axiDataBytes))
+    poke(axi.aw.bits.size, log2Ceil(axiDataBytes))
     poke(axi.aw.bits.lock, 0)
     poke(axi.aw.bits.cache, 0)
     poke(axi.aw.bits.prot, 0)
@@ -696,7 +696,7 @@ trait AXIRWTester[T <: Module] { this: DspTester[T] with HasDspPokeAs[T] =>
     poke(axi.aw.bits.user, 0)
     poke(axi.aw.bits.addr, addr)
     poke(axi.aw.bits.len, 0)
-    poke(axi.aw.bits.size, log2Up(axiDataBytes))
+    poke(axi.aw.bits.size, log2Ceil(axiDataBytes))
     poke(axi.aw.bits.lock, 0)
     poke(axi.aw.bits.cache, 0)
     poke(axi.aw.bits.prot, 0)
@@ -750,7 +750,7 @@ trait AXIRWTester[T <: Module] { this: DspTester[T] with HasDspPokeAs[T] =>
     poke(axi.aw.bits.user, 0)
     poke(axi.aw.bits.addr, addr)
     poke(axi.aw.bits.len, 0)
-    poke(axi.aw.bits.size, log2Up(axiDataBytes))
+    poke(axi.aw.bits.size, log2Ceil(axiDataBytes))
     poke(axi.aw.bits.lock, 0)
     poke(axi.aw.bits.cache, 0)
     poke(axi.aw.bits.prot, 0)
@@ -804,7 +804,7 @@ trait AXIRWTester[T <: Module] { this: DspTester[T] with HasDspPokeAs[T] =>
     poke(axi.ar.bits.user, 0)
     poke(axi.ar.bits.addr, addr)
     poke(axi.ar.bits.len, 0)
-    poke(axi.ar.bits.size, log2Up(axiDataBytes))
+    poke(axi.ar.bits.size, log2Ceil(axiDataBytes))
     poke(axi.ar.bits.lock, 0)
     poke(axi.ar.bits.cache, 0)
     poke(axi.ar.bits.prot, 0)

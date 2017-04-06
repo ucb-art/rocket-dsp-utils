@@ -9,7 +9,7 @@
 
 #include "memcpy.h"
 {{#each blocks}}
-{{#each addrs}}#define {{blockname}}_{{this.addrname}} {{addr}}
+{{#each addrs}}#define {{blockname}}_{{this.addrname}}L {{addr}}
 {{/each}}
 {{/each}}
 typedef struct sam_capture {
@@ -25,13 +25,13 @@ typedef struct sam_capture {
     bool use_dma;
 } sam_capture;
 {{#each sam}}
-#define {{samname}}_CTRL_BASE {{ctrl_base}}
-#define {{samname}}_DATA_BASE {{data_base}}
+#define {{samname}}_CTRL_BASE {{ctrl_base}}L
+#define {{samname}}_DATA_BASE {{data_base}}L
 
 static sam_capture {{samname}}_capture =
 (sam_capture) {
-    {{ctrl_base}}, // ctrl_base
-    {{data_base}}, // data_base
+    {{ctrl_base}}L, // ctrl_base
+    {{data_base}}L, // data_base
     0L,            // n_samps
     0L,            // start_addr
     0L,            // output
@@ -42,18 +42,18 @@ static sam_capture {{samname}}_capture =
     0,             // use_dma
 };
 {{/each}}
-#define SAM_W_START_ADDR_OFFSET     {{samWStartAddrOffset}}
-#define SAM_W_TARGET_COUNT_OFFSET   {{samWTargetCountOffset}}
-#define SAM_W_TRIG_OFFSET           {{samWTrigOffset}}
-#define SAM_W_WAIT_FOR_SYNC_OFFSET  {{samWWaitForSyncOffset}}
+#define SAM_W_START_ADDR_OFFSET     {{samWStartAddrOffset}}L
+#define SAM_W_TARGET_COUNT_OFFSET   {{samWTargetCountOffset}}L
+#define SAM_W_TRIG_OFFSET           {{samWTrigOffset}}L
+#define SAM_W_WAIT_FOR_SYNC_OFFSET  {{samWWaitForSyncOffset}}L
 
-#define SAM_W_WRITE_COUNT_OFFSET    {{samWWriteCountOffset}}
-#define SAM_W_PACKET_COUNT_OFFSET   {{samWPacketCountOffset}}
-#define SAM_W_SYNC_ADDR_OFFSET      {{samWSyncAddrOffset}}
-#define SAM_W_STATE_OFFSET          {{samWStateOffset}}
+#define SAM_W_WRITE_COUNT_OFFSET    {{samWWriteCountOffset}}L
+#define SAM_W_PACKET_COUNT_OFFSET   {{samWPacketCountOffset}}L
+#define SAM_W_SYNC_ADDR_OFFSET      {{samWSyncAddrOffset}}L
+#define SAM_W_STATE_OFFSET          {{samWStateOffset}}L
 
 {{#each chain_scr}}
-#define {{blockname}}_{{addrname}} {{addr}}{{/each}}
+#define {{blockname}}_{{addrname}} {{addr}}L{{/each}}
 
 #define INITIATE_SAM_CAPTURE_ERROR (255)
 #define NOT_IMPLEMENTED_ERROR      (254)
@@ -115,6 +115,7 @@ static void initiate_sam_capture(sam_capture* cap)
 
     write_reg_debug(base + SAM_W_START_ADDR_OFFSET,    cap->start_addr, "wStartAddr");
     write_reg_debug(base + SAM_W_TARGET_COUNT_OFFSET,  cap->n_samps, "wTargetCount");
+    write_reg_debug(base + SAM_W_TRIG_OFFSET,          0L, "wTrig");
     write_reg_debug(base + SAM_W_TRIG_OFFSET,          1L, "wTrig");
     write_reg_debug(base + SAM_W_WAIT_FOR_SYNC_OFFSET, cap->wait_for_sync, "wWaitForSync");
 

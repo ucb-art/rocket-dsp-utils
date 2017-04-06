@@ -9,6 +9,7 @@ import debuggers._
 import _root_.junctions._
 import diplomacy._
 import dspjunctions._
+import jtag._
 import sam._
 import testchipip._
 import uncore.converters._
@@ -170,8 +171,8 @@ trait HasDecoupledSCR {
    * Returns a pair of Bools. The first is valid and the second is finished
    */
   def decoupledHelper(valid: Bool, ready: Bool, writeEn: Bool, writeFinishedStatus: UInt) = {
-    val writeFinished = Reg(init=false.B)
-    val prevWriteEn = Reg(next=writeEn)
+    val writeFinished = RegInit(false.B)
+    val prevWriteEn = RegNext(writeEn)
     when (!writeEn) {
       writeFinished := false.B
     }
@@ -525,7 +526,10 @@ class DspChainWithAXI4SInputModule(
   override_reset: Option[Bool]=None)(implicit p: Parameters)
   extends DspChainModule(outer, b, override_clock, override_reset)
     with AXI4SInputModule {
-  override lazy val io = b.getOrElse(new DspChainIO with AXI4SInputIO)
+  class InnerIO extends DspChainIO() with AXI4SInputIO {
+    override def cloneType = (new InnerIO).asInstanceOf[this.type]
+  }
+  override lazy val io = b.getOrElse(new InnerIO)
 }
 
 abstract class DspChainModule(
