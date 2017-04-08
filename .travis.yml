@@ -22,4 +22,5 @@ install:
 
 script:
   - sbt "testOnly dspblocks.DspBlockTesterSpec"
+  - sbt "testOnly jtag.JtagAxiSpec"
 
