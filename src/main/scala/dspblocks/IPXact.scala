@@ -90,13 +90,12 @@ trait HasDspIPXact extends HasIPXact {
     memoryMaps
   }
 
-  def makeXbarMemoryMaps(ref: String, inputs: Int, addrMap: AddrMap): MemoryMaps = {
-    val signalMaps = addrMap.flatten.zipWithIndex.map { case (entry, i) =>
-      (s"io_out_${i}", entry.region.start)
-    }
+  def makeXbarMemoryMaps(mmref: String, asref: String, inputs: Int, addrMap: AddrMap): MemoryMaps = {
     val memoryMaps = new MemoryMaps
     memoryMaps.getMemoryMap().addAll(toCollection(
-      (0 until inputs).map(i => makeMemoryMap(s"${ref}_${i}", subspaceRefs=signalMaps.map{ case(name, baseAddr) => makeSubspaceRef(s"subspacemap_${ref}_${name}_${i}", baseAddr, name)}))
+      (0 until inputs).map(i => makeMemoryMap(s"${mmref}_${i}", subspaceRefs=addrMap.flatten.zipWithIndex.map{ case(entry, j) => 
+        makeSubspaceRef(s"subspacemap_${mmref}_${i}_io_out_${j}", entry.region.start, s"io_out_${j}", s"${asref}_${j}_segment")
+      }))
     ))
     memoryMaps
   }
@@ -124,7 +123,11 @@ trait HasDspIPXact extends HasIPXact {
     val addressSpaces = new AddressSpaces
     addressSpaces.getAddressSpace.addAll(toCollection(
       addrMap.flatten.zipWithIndex.map { case (entry, i) =>
-        makeAddressSpace(s"${ref}_${i}", entry.region.size)
+        makeAddressSpace(s"${ref}_${i}", 
+         makeAddressSpaceSegments(
+           Seq(makeAddressSpaceSegment(s"${ref}_${i}_segment", entry.region.start, entry.region.size))
+         )
+        )
       }
     ))
     addressSpaces
@@ -252,7 +255,7 @@ trait HasDspIPXact extends HasIPXact {
     val usePortQueues = p(XBarUsePortQueues)
     val busInterfaces = makeXbarInterfaces(inputs, outputs, mmref, asref) 
     val addressSpaces = makeXbarAddressSpaces(asref, addrMap)
-    val memoryMaps = makeXbarMemoryMaps(mmref, inputs, addrMap)
+    val memoryMaps = makeXbarMemoryMaps(mmref, asref, inputs, addrMap)
     val model = makeModel(makeXbarPorts(inputs, outputs))
     val parameters = makeParameters(HashMap[String, String](
       "usePortQueues" -> usePortQueues.toString))

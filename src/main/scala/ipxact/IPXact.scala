@@ -5,6 +5,7 @@ import org.accellera.spirit.v1685_2009.{File => SpiritFile, Parameters => Spirit
 import javax.xml.bind.{JAXBContext, Marshaller}
 import java.io.{File, FileOutputStream}
 import scala.collection.JavaConverters
+import scala.collection.JavaConverters._
 import java.util.Collection
 import java.math.BigInteger
 import junctions._
@@ -25,7 +26,7 @@ trait HasIPXact {
     (0 until count).map{i => {
       val bridge = new BusInterfaceType.Slave.Bridge
       bridge.setMasterRef(s"${prefix}_${i}")
-      bridge.setOpaque(false)
+      bridge.setOpaque(true)
       bridge
     }}
   }
@@ -237,13 +238,14 @@ trait HasIPXact {
     addrBlockMap
   }
 
-  def makeSubspaceRef(name: String, baseAddr: BigInt, signal: String): SubspaceRefType = {
+  def makeSubspaceRef(name: String, baseAddr: BigInt, signal: String, segmentName: String): SubspaceRefType = {
     val subspaceRef = new SubspaceRefType
     subspaceRef.setMasterRef(signal)
     subspaceRef.setName(name)
     val baseAddress = new BaseAddress
     baseAddress.setValue("0x" + baseAddr.toString(16))
     subspaceRef.setBaseAddress(baseAddress)
+    subspaceRef.setSegmentRef(segmentName)
     subspaceRef
   }
 
@@ -266,18 +268,40 @@ trait HasIPXact {
   //////////// Address Spaces //////////////////
   //////////////////////////////////////////////
 
-  // mmref = address space name reference string
-  def makeAddressSpace(asref: String, size: BigInt): AddressSpaces.AddressSpace = {
+  // asref = address space name reference string
+  def makeAddressSpace(asref: String, segments: AddressSpaces.AddressSpace.Segments): AddressSpaces.AddressSpace = {
     val addressSpace = new AddressSpaces.AddressSpace
     addressSpace.setName(asref)
     var range = new BankedBlockType.Range
+    var size = segments.getSegment().asScala.foldLeft(BigInt(0))((b,a) => b + BigInt.apply(a.getRange().getValue().substring(2), 16))
     range.setValue("0x" + size.toString(16))
     addressSpace.setRange(range)
     var width = new BankedBlockType.Width
     width.setValue(BigInteger.valueOf(64))
     addressSpace.setWidth(width)
     addressSpace.setAddressUnitBits(BigInteger.valueOf(8))
+    addressSpace.setSegments(segments)
     addressSpace
+  }
+
+  // create a segment within an address space 
+  def makeAddressSpaceSegment(name: String, offset: BigInt, size: BigInt): AddressSpaces.AddressSpace.Segments.Segment = {
+    val segment = new AddressSpaces.AddressSpace.Segments.Segment
+    segment.setName(name)
+    var addressOffset = new AddressSpaces.AddressSpace.Segments.Segment.AddressOffset
+    addressOffset.setValue("0x" + offset.toString(16))
+    segment.setAddressOffset(addressOffset)
+    var range = new AddressSpaces.AddressSpace.Segments.Segment.Range
+    range.setValue("0x" + size.toString(16))
+    segment.setRange(range)
+    segment
+  }
+
+  // combine segments
+  def makeAddressSpaceSegments(segmentsList: Seq[AddressSpaces.AddressSpace.Segments.Segment]): AddressSpaces.AddressSpace.Segments = {
+    val segments = new AddressSpaces.AddressSpace.Segments
+    segments.getSegment().addAll(toCollection(segmentsList))
+    segments
   }
 
 
