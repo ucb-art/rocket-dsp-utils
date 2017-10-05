@@ -243,7 +243,7 @@ trait HasIPXact {
     subspaceRef.setMasterRef(signal)
     subspaceRef.setName(name)
     val baseAddress = new BaseAddress
-    baseAddress.setValue("0x" + baseAddr.toString(16))
+    baseAddress.setValue("0x" + (baseAddr/64).toString(16))
     subspaceRef.setBaseAddress(baseAddress)
     subspaceRef.setSegmentRef(segmentName)
     subspaceRef
@@ -279,20 +279,20 @@ trait HasIPXact {
     var width = new BankedBlockType.Width
     width.setValue(BigInteger.valueOf(64))
     addressSpace.setWidth(width)
-    addressSpace.setAddressUnitBits(BigInteger.valueOf(8))
+    addressSpace.setAddressUnitBits(BigInteger.valueOf(64))
     addressSpace.setSegments(segments)
     addressSpace
   }
 
   // create a segment within an address space 
-  def makeAddressSpaceSegment(name: String, offset: BigInt, size: BigInt): AddressSpaces.AddressSpace.Segments.Segment = {
+  def makeAddressSpaceSegment(name: String, size: BigInt): AddressSpaces.AddressSpace.Segments.Segment = {
     val segment = new AddressSpaces.AddressSpace.Segments.Segment
     segment.setName(name)
     var addressOffset = new AddressSpaces.AddressSpace.Segments.Segment.AddressOffset
-    addressOffset.setValue("0x" + offset.toString(16))
+    addressOffset.setValue("0x" + BigInt(0).toString(16))
     segment.setAddressOffset(addressOffset)
     var range = new AddressSpaces.AddressSpace.Segments.Segment.Range
-    range.setValue("0x" + size.toString(16))
+    range.setValue("0x" + (size/64).toString(16))
     segment.setRange(range)
     segment
   }
