@@ -26,7 +26,7 @@ trait HasIPXact {
     (0 until count).map{i => {
       val bridge = new BusInterfaceType.Slave.Bridge
       bridge.setMasterRef(s"${prefix}_${i}")
-      bridge.setOpaque(true)
+      bridge.setOpaque(false)
       bridge
     }}
   }
@@ -273,7 +273,13 @@ trait HasIPXact {
     val addressSpace = new AddressSpaces.AddressSpace
     addressSpace.setName(asref)
     var range = new BankedBlockType.Range
-    var size = segments.getSegment().asScala.foldLeft(BigInt(0))((b,a) => b + BigInt.apply(a.getRange().getValue().substring(2), 16))
+    // range should be large enough to accommodate all the segments (offset + range)
+    var size = segments.getSegment().asScala.foldLeft(BigInt(0))((b,a) => {
+      val segmentOffset = BigInt.apply(a.getAddressOffset().getValue().substring(2), 16)
+      val segmentRange = BigInt.apply(a.getRange().getValue().substring(2), 16)
+      val segmentMaxAddress = segmentOffset + segmentRange
+      b.max(segmentMaxAddress)
+    })
     range.setValue("0x" + size.toString(16))
     addressSpace.setRange(range)
     var width = new BankedBlockType.Width
