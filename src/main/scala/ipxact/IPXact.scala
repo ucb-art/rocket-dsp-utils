@@ -208,7 +208,7 @@ trait HasIPXact {
     
     // range
     val range = new BankedBlockType.Range
-    val rangeValue = registers.size * widthValue / 64 // assume 64-bit addressUnitBits
+    val rangeValue = registers.size * widthValue / 64 // assume 64-bit SCR registers
     range.setValue(s"$rangeValue")
     addrBlockMap.setRange(range)
 
@@ -259,7 +259,7 @@ trait HasIPXact {
     memoryMap.setName(mmref)
     addrBlocks.foreach(memoryMap.getMemoryMap().add(_))
     subspaceRefs.foreach(memoryMap.getMemoryMap().add(_))
-    memoryMap.setAddressUnitBits(BigInteger.valueOf(64))
+    memoryMap.setAddressUnitBits(BigInteger.valueOf(8))
     memoryMap
   }
 
@@ -286,7 +286,7 @@ trait HasIPXact {
     var width = new BankedBlockType.Width
     width.setValue(BigInteger.valueOf(64))
     addressSpace.setWidth(width)
-    addressSpace.setAddressUnitBits(BigInteger.valueOf(64))
+    addressSpace.setAddressUnitBits(BigInteger.valueOf(8))
     addressSpace.setSegments(segments)
     addressSpace
   }
