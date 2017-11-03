@@ -243,7 +243,7 @@ trait HasIPXact {
     subspaceRef.setMasterRef(signal)
     subspaceRef.setName(name)
     val baseAddress = new BaseAddress
-    baseAddress.setValue("0x" + (baseAddr/64).toString(16))
+    baseAddress.setValue("0x" + baseAddr.toString(16))
     subspaceRef.setBaseAddress(baseAddress)
     subspaceRef.setSegmentRef(segmentName)
     subspaceRef
@@ -274,13 +274,14 @@ trait HasIPXact {
     addressSpace.setName(asref)
     var range = new BankedBlockType.Range
     // range should be large enough to accommodate all the segments (offset + range)
-    var size = segments.getSegment().asScala.foldLeft(BigInt(0))((b,a) => {
-      val segmentOffset = BigInt.apply(a.getAddressOffset().getValue().substring(2), 16)
-      val segmentRange = BigInt.apply(a.getRange().getValue().substring(2), 16)
-      val segmentMaxAddress = segmentOffset + segmentRange
-      b.max(segmentMaxAddress)
-    })
-    range.setValue("0x" + size.toString(16))
+    //var size = segments.getSegment().asScala.foldLeft(BigInt(0))((b,a) => {
+    //  val segmentOffset = BigInt.apply(a.getAddressOffset().getValue().substring(2), 16)
+    //  val segmentRange = BigInt.apply(a.getRange().getValue().substring(2), 16)
+    //  val segmentMaxAddress = segmentOffset + segmentRange
+    //  b.max(segmentMaxAddress)
+    //})
+    //range.setValue("0x" + size.toString(16))
+    range.setValue("4G")
     addressSpace.setRange(range)
     var width = new BankedBlockType.Width
     width.setValue(BigInteger.valueOf(64))
@@ -291,14 +292,14 @@ trait HasIPXact {
   }
 
   // create a segment within an address space 
-  def makeAddressSpaceSegment(name: String, size: BigInt): AddressSpaces.AddressSpace.Segments.Segment = {
+  def makeAddressSpaceSegment(name: String, size: BigInt, offset: BigInt): AddressSpaces.AddressSpace.Segments.Segment = {
     val segment = new AddressSpaces.AddressSpace.Segments.Segment
     segment.setName(name)
     var addressOffset = new AddressSpaces.AddressSpace.Segments.Segment.AddressOffset
-    addressOffset.setValue("0x" + BigInt(0).toString(16))
+    addressOffset.setValue("0x" + offset.toString(16))
     segment.setAddressOffset(addressOffset)
     var range = new AddressSpaces.AddressSpace.Segments.Segment.Range
-    range.setValue("0x" + (size/64).toString(16))
+    range.setValue("0x" + size.toString(16))
     segment.setRange(range)
     segment
   }

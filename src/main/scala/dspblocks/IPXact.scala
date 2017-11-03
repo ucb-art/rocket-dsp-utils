@@ -125,7 +125,7 @@ trait HasDspIPXact extends HasIPXact {
       addrMap.flatten.zipWithIndex.map { case (entry, i) =>
         makeAddressSpace(s"${ref}_${i}", 
          makeAddressSpaceSegments(
-           Seq(makeAddressSpaceSegment(s"${ref}_${i}_segment", entry.region.size))
+           Seq(makeAddressSpaceSegment(s"${ref}_${i}_segment", entry.region.size, entry.region.start))
          )
         )
       }
