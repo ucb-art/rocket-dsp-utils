@@ -394,7 +394,7 @@ trait AXI4SInputModule {
 
 abstract class DspChain()
   (implicit val p: Parameters) extends LazyModule with HasDspChainParameters
-  with HasSCRBuilder with HasPatternGenerator with HasLogicAnalyzer {
+  with HasSCRBuilder with HasPatternGenerator {
   def module: DspChainModule
   def scrName = p(DspChainId)
   var ctrlBaseAddr: () => Long = () => 0L
@@ -542,7 +542,7 @@ abstract class DspChainModule(
   override_reset: Option[Bool]=None)(implicit val p: Parameters)
   extends LazyModuleImp(outer, override_clock, override_reset)
     with HasDspChainParameters
-    with HasPatternGeneratorModule with HasLogicAnalyzerModule
+    with HasPatternGeneratorModule
     with WithChainHeaderWriter with HasDspJtagModule {
   // This gets connected to the input of the first block
   // Different traits that implement streamIn should be mixed in
@@ -585,10 +585,10 @@ abstract class DspChainModule(
 
   // make sure the pattern generator and logic analyzer are instantitated
   patternGenerator
-  logicAnalyzer
+  //logicAnalyzer
 
   // make sure jtag is connected
-  jtagConnect
+  //jtagConnect
 
 
   val maxDataWidth = mod_ios.map(i =>
@@ -598,9 +598,13 @@ abstract class DspChainModule(
   val lastDataWidth = mod_ios.last.out.bits.getWidth
 
   for (i <- 0 until mod_ios.length - 1) {
-    require(mod_ios(i+1).in.bits.getWidth == mod_ios(i).out.bits.getWidth,
-      s"Connecting modules with different width IOs: " +
-      s"LHS = ${mod_ios(i + 1).in.bits.getWidth} and RHS = ${mod_ios(i).out.bits.getWidth}")
+    //require(mod_ios(i+1).in.bits.getWidth == mod_ios(i).out.bits.getWidth,
+    //  s"Connecting modules with different width IOs: " +
+    //  s"LHS = ${mod_ios(i + 1).in.bits.getWidth} and RHS = ${mod_ios(i).out.bits.getWidth}")
+    if (mod_ios(i+1).in.bits.getWidth != mod_ios(i).out.bits.getWidth) {
+      println(s"[warn]: Connecting modules with different width IOs: " +
+        s"LHS = ${mod_ios(i + 1).in.bits.getWidth} and RHS = ${mod_ios(i).out.bits.getWidth}")
+    }
     mod_ios(i + 1).in <> mod_ios(i).out
   }
 
@@ -634,13 +638,13 @@ abstract class DspChainModule(
       }
       currentPatternGen += 1
     }
-    if (blocksUseLA(i)) {
-      when (logicAnalyzerSelects(currentLogicAnalyzer)) {
-        logicAnalyzer.io.signal.valid := mod_ios(i).out.valid
-        logicAnalyzer.io.signal.bits  := mod_ios(i).out.bits
-      }
-      currentLogicAnalyzer += 1
-    }
+    //if (blocksUseLA(i)) {
+    //  when (logicAnalyzerSelects(currentLogicAnalyzer)) {
+    //    logicAnalyzer.io.signal.valid := mod_ios(i).out.valid
+    //    logicAnalyzer.io.signal.bits  := mod_ios(i).out.bits
+    //  }
+    //  currentLogicAnalyzer += 1
+    //}
   }
 
   // connect output of each module to appropriate SAM
@@ -652,8 +656,8 @@ abstract class DspChainModule(
 
   val control_axis = (modules ++ flattenedSams).map(_.io.axi) :+ scrfile_tl2axi.io.nasti
 
-  val control_masters = Seq(io.control_axi) ++ jtagCtrlAxiMasters
-  val data_masters    = Seq(io.data_axi) ++ jtagDataAxiMasters
+  val control_masters = Seq(io.control_axi)// ++ jtagCtrlAxiMasters
+  val data_masters    = Seq(io.data_axi)// ++ jtagDataAxiMasters
 
   val ctrlOutPorts = control_axis.length
   val dataOutPorts = totalSAMBlocks

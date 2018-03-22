@@ -92,6 +92,24 @@ class SAM()(implicit p: Parameters) extends NastiModule()(p) with SAMWidthHelper
     synced       := true.B // synced on address 0 when waiting for sync
   }
 
+  // treat a rising valid signal as the start of a packet
+  // but if in the ready state, we need to start recording immediately
+  val valid_delay = Reg(next=io.in.valid)
+  when (wState === wReady && ~valid_delay && io.in.valid) {
+    wState       := wRecord
+    wPacketCount := wPacketCount + 1.U
+    synced       := true.B // synced on address 0 when waiting for sync
+    mem_wen      := true.B
+    wWriteAddr   := wWriteAddr + 1.U
+    wWriteCount  := wWriteCount + 1.U
+    when (wWriteCount === io.wTargetCount - 1.U) {
+      wState := wIdle
+    }
+    when (wWriteAddr === (config.memDepth-1).U) {
+      wWriteAddr := 0.U  // loop back around
+    }
+  }
+
   // wen set only in wRecord
   when (mem_wen) {
       mem.write(wWriteAddr, io.in.bits)

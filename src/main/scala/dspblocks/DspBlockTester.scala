@@ -354,15 +354,13 @@ trait OutputTester {
     gen match {
       case s: SInt =>
         streamOut.last.map(x => (0 until lanesOut).map{ idx => {
-          // TODO: doesn't work if width is > 32
-          ((x >> (gen.getWidth * idx)) % pow(2, gen.getWidth).toInt).toDouble
+          ((x >> (gen.getWidth * idx)) % (BigInt.apply(1) << gen.getWidth)).toDouble
         }}).flatten.toSeq
       case f: FixedPoint =>
         f.asInstanceOf[FixedPoint].binaryPoint match {
           case KnownBinaryPoint(binaryPoint) =>
             streamOut.last.map(x => (0 until lanesOut).map{ idx => {
-              // TODO: doesn't work if width is > 32
-              val y = (x >> (gen.getWidth * idx)) % pow(2, gen.getWidth).toInt
+              val y = (x >> (gen.getWidth * idx)) % (BigInt.apply(1) << gen.getWidth) 
               toDoubleFromUnsigned(y, gen.getWidth, binaryPoint)
             }}).flatten.toSeq
           case _ =>
