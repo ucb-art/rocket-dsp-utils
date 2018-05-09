@@ -360,6 +360,9 @@ trait HasLogicAnalyzerModule extends HasDspChainParameters with HasDecoupledSCR 
     logicAnalyzer.io.signal.valid := false.B
     logicAnalyzer.io.signal.bits  := 0.U
 
+    logicAnalyzer.io.trigger.bits := false.B
+    logicAnalyzer.io.trigger.valid := false.B
+
     logicAnalyzer
   }
   lazy val logicAnalyzerSelects = (0 until totalLABlocks).map(i =>
@@ -394,7 +397,7 @@ trait AXI4SInputModule {
 
 abstract class DspChain()
   (implicit val p: Parameters) extends LazyModule with HasDspChainParameters
-  with HasSCRBuilder with HasPatternGenerator {
+  with HasSCRBuilder with HasPatternGenerator with HasLogicAnalyzer {
   def module: DspChainModule
   def scrName = p(DspChainId)
   var ctrlBaseAddr: () => Long = () => 0L
@@ -543,6 +546,7 @@ abstract class DspChainModule(
   extends LazyModuleImp(outer, override_clock, override_reset)
     with HasDspChainParameters
     with HasPatternGeneratorModule
+    with HasLogicAnalyzerModule
     with WithChainHeaderWriter with HasDspJtagModule {
   // This gets connected to the input of the first block
   // Different traits that implement streamIn should be mixed in
@@ -585,7 +589,7 @@ abstract class DspChainModule(
 
   // make sure the pattern generator and logic analyzer are instantitated
   patternGenerator
-  //logicAnalyzer
+  logicAnalyzer
 
   // make sure jtag is connected
   //jtagConnect
@@ -638,13 +642,15 @@ abstract class DspChainModule(
       }
       currentPatternGen += 1
     }
-    //if (blocksUseLA(i)) {
-    //  when (logicAnalyzerSelects(currentLogicAnalyzer)) {
-    //    logicAnalyzer.io.signal.valid := mod_ios(i).out.valid
-    //    logicAnalyzer.io.signal.bits  := mod_ios(i).out.bits
-    //  }
-    //  currentLogicAnalyzer += 1
-    //}
+    if (blocksUseLA(i)) {
+      when (logicAnalyzerSelects(currentLogicAnalyzer)) {
+        logicAnalyzer.io.signal.valid := mod_ios(i).out.valid
+        logicAnalyzer.io.signal.bits  := mod_ios(i).out.bits
+        logicAnalyzer.io.trigger.bits  := mod_ios(i).out.sync
+        logicAnalyzer.io.trigger.valid  := mod_ios(i).out.valid
+      }
+      currentLogicAnalyzer += 1
+    }
   }
 
   // connect output of each module to appropriate SAM
