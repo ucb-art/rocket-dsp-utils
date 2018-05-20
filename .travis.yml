@@ -21,7 +21,8 @@ install:
   - bash .install_deps.sh
 
 script:
-  - sbt "testOnly dspblocks.DspBlockTesterSpec"
+  - java -XX:+CMSClassUnloadingEnabled -XX:MaxPermSize=256m -Xmx8G -Xss128M -jar $INSTALL_DIR/rocket-chip/sbt-launch.jar -Dsbt.ivy.home="$HOME/.ivy2" "testOnly dspblocks.DspBlockTesterSpec"
+  # - sbt "testOnly dspblocks.DspBlockTesterSpec"
   # AsyncResetReg.v is missing on travis
   # - sbt "testOnly jtag.JtagAxiSpec"
 
