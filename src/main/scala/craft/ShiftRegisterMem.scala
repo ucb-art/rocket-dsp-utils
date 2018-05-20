@@ -15,18 +15,17 @@ object ShiftRegisterMem {
     if (n == 0) {
       in
     } else if (n == 1) {
-      val out = Reg(in.cloneType)
-      out := in
-      out
-    } else if (use_sp_mem && n%2 == 0) { // TODO: this passes the test but doesn't work for all cases
+      RegEnable(in, en)
+    } else if (use_sp_mem && n%2 == 0 && n > 2) { // note: double pumping doesn't doesn't work for shift = 2
       val out = Wire(in.cloneType)
       val mem = SyncReadMem(n/2, Vec(in, in))
       if (name != null) {
         mem.suggestName(name)
       }
       val index_counter = Counter(en, n)._1
-      val raddr = (index_counter + 2.U) >> 1.U 
-      val waddr = RegEnable(index_counter >> 1.U, (n/2-1).U, en)
+      val half_counter = index_counter >> 1.U
+      val raddr = half_counter + 1.U 
+      val waddr = RegEnable(half_counter, (n/2-1).U, en)
       val wen = index_counter(0) && en
       val des = Reg(in.cloneType)
       val ser = Reg(in.cloneType)
